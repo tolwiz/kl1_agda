@@ -1,12 +1,20 @@
 module kl1 where
 
-open import Data.List using (List)
+-- open import Data.List using (List)
 -- open import Relation.Binary.PropositionalEquality using (_≡_)
 -- open import Relation.Nullary using (Dec)
 
+data Bool : Set where
+  true  : Bool
+  false : Bool
+
+data List (A : Set) : Set where
+  [] : List A
+  _::_ : A → List A → List A
+infixr 5 _::_
+
 data _≡_ {A : Set } (x : A) : A → Set where
   refl : x ≡ x
-
 infix 4 _≡_
 
 data ⊥ : Set where
@@ -28,3 +36,9 @@ module Syntax (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   data Rule : Set where
     must : (b : Body) → (c : Head) → Rule
     may  : (b : Body) → (c : Head) → Rule
+
+  _∈?_ : Atom → List Atom → Bool
+  a ∈? [] = false
+  a ∈? (x :: xs) with a ≟ x
+  ... | yes _ = true
+  ... | no  _ = a ∈? xs
