@@ -1,4 +1,4 @@
-module kl1 where
+module KL1 where
 
 -- open import Data.List using (List)
 -- open import Relation.Binary.PropositionalEquality using (_≡_)
@@ -7,6 +7,11 @@ module kl1 where
 data Bool : Set where
   true  : Bool
   false : Bool
+
+_∧_ : Bool → Bool → Bool
+true ∧ b = b
+false ∧ _ = false
+infixr 6 _∧_
 
 data List (A : Set) : Set where
   [] : List A
@@ -26,7 +31,7 @@ data Dec (P : Set) : Set where
   yes : (p : P) → Dec P
   no  : (np : ¬ P) → Dec P
 
-module Syntax (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
+module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   Body : Set
   Body = List Atom
 
@@ -42,3 +47,8 @@ module Syntax (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   a ∈? (x :: xs) with a ≟ x
   ... | yes _ = true
   ... | no  _ = a ∈? xs
+
+  _⊆?_ : List Atom → List Atom → Bool
+  [] ⊆? ys = true
+  (x :: xs) ⊆? ys = (x ∈? ys) ∧ (xs ⊆? ys)
+  infix 4 _⊆?_
