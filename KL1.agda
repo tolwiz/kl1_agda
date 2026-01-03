@@ -63,3 +63,7 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   map : {A B : Set} → (A → B) → List A → List B
   map f [] = []
   map f (x :: xs) = f x :: map f xs
+
+  _++_ : {A : Set} → List A → List A → List A
+  [] ++ ys = ys
+  (x :: xs) ++ ys = x :: (xs ++ ys)
