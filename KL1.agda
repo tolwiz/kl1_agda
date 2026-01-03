@@ -67,3 +67,13 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   _++_ : {A : Set} → List A → List A → List A
   [] ++ ys = ys
   (x :: xs) ++ ys = x :: (xs ++ ys)
+  
+  bodyOf : Rule → Body
+  bodyOf (must b c) = b
+  bodyOf (may b c)  = b
+  
+  ruleOptions : Rule → World → List (List Atom)
+  ruleOptions r w with (bodyOf r) ⊆? w | r
+  ... | false | _ = [] :: [] 
+  ... | true  | must _ heads = map (λ h → h :: []) heads
+  ... | true  | may  _ heads = [] :: (map (λ h → h :: []) heads)
