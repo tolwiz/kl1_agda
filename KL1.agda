@@ -68,6 +68,13 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   [] ++ ys = ys
   (x :: xs) ++ ys = x :: (xs ++ ys)
   
+  concat : {A : Set} → List (List A) → List A
+  concat [] = []
+  concat (x :: xs) = x ++ concat xs
+
+  concatMap : {A B : Set} → (A → List B) → List A → List B
+  concatMap f xs = concat (map f xs)
+
   bodyOf : Rule → Body
   bodyOf (must b c) = b
   bodyOf (may b c)  = b
@@ -77,3 +84,10 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   ... | false | _ = [] :: [] 
   ... | true  | must _ heads = map (λ h → h :: []) heads
   ... | true  | may  _ heads = [] :: (map (λ h → h :: []) heads)
+
+  cartesian : {A : Set} → List (List (List A)) → List (List A)
+  cartesian [] = [] :: []
+  cartesian (options :: rest) =
+    let tails = cartesian rest in
+    -- concatMap (λ (opt : List A) → map (λ (t : List A) → opt ++ t) tails) options
+    concatMap (λ opt → map (λ t → opt ++ t) tails) options
