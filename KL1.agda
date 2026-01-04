@@ -91,3 +91,19 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     let tails = cartesian rest in
     -- concatMap (λ (opt : List A) → map (λ (t : List A) → opt ++ t) tails) options
     concatMap (λ opt → map (λ t → opt ++ t) tails) options
+
+  step : List Rule → World → List World
+  --step rules w =
+  --  map (λ add → w ++ add) (cartesian (map (λ r → ruleOptions r w) rules))
+  step rules w =
+    let
+      allOptions : List (List (List Atom))
+      allOptions = map (λ r → ruleOptions r w) rules
+
+      additions : List (List Atom)
+      additions = cartesian allOptions
+
+      nextWorlds : List World
+      nextWorlds = map (λ add → w ++ add) additions
+    in
+      nextWorlds
