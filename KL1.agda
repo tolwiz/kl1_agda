@@ -79,6 +79,11 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   (x :: xs) ∩? w = (x ∈? w) ∨ (xs ∩? w)
   infix 7 _∩?_
 
+  _⊨?_ : World → Rule → Bool
+  w ⊨? (may _ _) = true
+  w ⊨? (must b c) = (b ⊆? w) ⇒ (c ∩? w)
+  infix 5 _⊨?_
+
   map : {A B : Set} → (A → B) → List A → List B
   map f [] = []
   map f (x :: xs) = f x :: map f xs
