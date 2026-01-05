@@ -1,5 +1,9 @@
 module KL1 where
 
+data ℕ : Set where
+  zero : ℕ
+  suc  : ℕ → ℕ
+
 data Bool : Set where
   true  : Bool
   false : Bool
@@ -107,3 +111,10 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
       nextWorlds = map (λ add → w ++ add) additions
     in
       nextWorlds
+  
+  cns : List Rule → World → ℕ → List World
+  cns rules w zero = w :: [] 
+  cns rules w (suc n) =
+    -- concatMap (λ nw → cns rules nw n) (step rules w)
+    let nexts = step rules w in
+    concatMap (λ nw → cns rules nw n) nexts
