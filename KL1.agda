@@ -18,6 +18,11 @@ true  ∨ _ = true
 false ∨ b = b
 infixr 5 _∨_ 
 
+_⇒_ : Bool → Bool → Bool
+true  ⇒ false = false
+_     ⇒ _     = true
+infixr 4 _⇒_
+
 data List (A : Set) : Set where
   [] : List A
   _::_ : A → List A → List A
