@@ -9,9 +9,14 @@ data Bool : Set where
   false : Bool
 
 _∧_ : Bool → Bool → Bool
-true ∧ b = b
+true  ∧ b = b
 false ∧ _ = false
 infixr 6 _∧_
+
+_∨_ : Bool → Bool → Bool
+true  ∨ _ = true
+false ∨ b = b
+infixr 5 _∨_ 
 
 data List (A : Set) : Set where
   [] : List A
