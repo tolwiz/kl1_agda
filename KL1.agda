@@ -84,6 +84,11 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   w ⊨? (must b c) = (b ⊆? w) ⇒ (c ∩? w)
   infix 5 _⊨?_
 
+  _⊨*?_ : World → List Rule → Bool
+  w ⊨*? [] = true
+  w ⊨*? (r :: rs) = (w ⊨? r) ∧ (w ⊨*? rs)
+  infix 5 _⊨*?_
+
   map : {A B : Set} → (A → B) → List A → List B
   map f [] = []
   map f (x :: xs) = f x :: map f xs
@@ -138,3 +143,6 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     -- concatMap (λ nw → cns rules nw n) (step rules w)
     let nexts = step rules w in
     concatMap (λ nw → cns rules nw n) nexts
+
+
+
