@@ -149,3 +149,10 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     -- concatMap (λ nw → cns rules nw n) (step rules w)
     let nexts = step rules w in
     concatMap (λ nw → cns rules nw n) nexts
+
+  out₁ : List Rule → World → ℕ → List World
+  out₁ rules initialWorld fuel =
+    let
+      candidates = cns rules initialWorld fuel
+    in
+      filter (λ w → w ⊨*? rules) candidates
