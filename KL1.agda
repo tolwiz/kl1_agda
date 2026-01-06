@@ -177,9 +177,10 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     out₁ rules initialWorld n = -- !! n here is the fuel
       let
         candidates = cns rules initialWorld n
+        valid      = filter (λ w → w ⊨*? rules) candidates
       in
-        filter (λ w → w ⊨*? rules) candidates
-  
+        deduplicate valid 
+
   -- ===============================================================
   -- === Semantics 3.3
   -- ===============================================================
