@@ -111,6 +111,10 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   ... | false = x :: (xs ∪ ys)
   infixr 5 _∪_
 
+  _≈?_ : World → World → Bool
+  w1 ≈? w2 = (w1 ⊆? w2) ∧ (w2 ⊆? w1)
+  infix 4 _≈?_
+
   _⊨?_ : World → Rule → Bool
   w ⊨? (may _ _) = true
   w ⊨? (must b c) = (b ⊆? w) ⇒ (c ∩? w)
