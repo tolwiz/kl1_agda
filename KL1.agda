@@ -155,7 +155,6 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     cartesian [] = [] :: []
     cartesian (options :: rest) =
       let tails = cartesian rest in
-      -- concatMap (λ (opt : List A) → map (λ (t : List A) → opt ++ t) tails) options
       concatMap (λ opt → map (λ t → opt ++ t) tails) options
 
     step : List Rule → World → List World
@@ -169,12 +168,11 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     cns : List Rule → World → ℕ → List World
     cns rules w zero = w :: [] 
     cns rules w (suc n) =
-      -- concatMap (λ nw → cns rules nw n) (step rules w)
       let nexts = step rules w in
       concatMap (λ nw → cns rules nw n) nexts
   
     out₁ : List Rule → World → ℕ → List World
-    out₁ rules initialWorld n = -- !! n here is the fuel
+    out₁ rules initialWorld n = 
       let
         candidates = cns rules initialWorld n
         valid      = filter (λ w → w ⊨*? rules) candidates
