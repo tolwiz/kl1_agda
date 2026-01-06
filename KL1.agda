@@ -1,7 +1,7 @@
 module KL1 where
 
 -- ==================================================================
--- === Standard library
+-- === General definitions and helper functions 
 -- ==================================================================
 data ℕ : Set where
   zero : ℕ
@@ -68,7 +68,7 @@ data Dec (P : Set) : Set where
   no  : (np : ¬ P) → Dec P
 
 -- ================================================================
--- === KL1 specifics
+-- === KL1
 -- ================================================================
 module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
  

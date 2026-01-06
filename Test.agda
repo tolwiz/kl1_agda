@@ -1,4 +1,4 @@
-module Test1 where
+module Test where
 
 open import KL1
 
