@@ -104,6 +104,13 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   (x :: xs) ∩? w = (x ∈? w) ∨ (xs ∩? w)
   infix 7 _∩?_
 
+  _∪_ : List Atom → List Atom → List Atom
+  [] ∪ ys = ys
+  (x :: xs) ∪ ys with x ∈? ys
+  ... | true = xs ∪ ys
+  ... | false = x :: (xs ∪ ys)
+  infixr 5 _∪_
+
   _⊨?_ : World → Rule → Bool
   w ⊨? (may _ _) = true
   w ⊨? (must b c) = (b ⊆? w) ⇒ (c ∩? w)
@@ -135,23 +142,15 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
       let tails = cartesian rest in
       -- concatMap (λ (opt : List A) → map (λ (t : List A) → opt ++ t) tails) options
       concatMap (λ opt → map (λ t → opt ++ t) tails) options
-  
+
     step : List Rule → World → List World
-    --step rules w =
-    --  map (λ add → w ++ add) (cartesian (map (λ r → ruleOptions r w) rules))
     step rules w =
       let
-        allOptions : List (List (List Atom))
         allOptions = map (λ r → ruleOptions r w) rules
-  
-        additions : List (List Atom)
-        additions = cartesian allOptions
-  
-        nextWorlds : List World
-        nextWorlds = map (λ add → w ++ add) additions
+        additions  = cartesian allOptions
       in
-        nextWorlds
-    
+        map (λ add → add ∪ w) additions
+
     cns : List Rule → World → ℕ → List World
     cns rules w zero = w :: [] 
     cns rules w (suc n) =
