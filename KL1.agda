@@ -111,15 +111,6 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   ... | false = x :: (xs ∪ ys)
   infixr 5 _∪_
 
-  _≈?_ : World → World → Bool
-  w1 ≈? w2 = (w1 ⊆? w2) ∧ (w2 ⊆? w1)
-  infix 4 _≈?_
-
-  _∈W?_ : World → List World → Bool
-  w ∈W? [] = false
-  w ∈W? (x :: xs) = (w ≈? x) ∨ (w ∈W? xs)
-  infix 4 _∈W?_
-
   _⊨?_ : World → Rule → Bool
   w ⊨? (may _ _) = true
   w ⊨? (must b c) = (b ⊆? w) ⇒ (c ∩? w)
@@ -130,6 +121,21 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   w ⊨*? (r :: rs) = (w ⊨? r) ∧ (w ⊨*? rs)
   infix 5 _⊨*?_
 
+  _≈?_ : World → World → Bool
+  w1 ≈? w2 = (w1 ⊆? w2) ∧ (w2 ⊆? w1)
+  infix 4 _≈?_
+
+  _∈W?_ : World → List World → Bool
+  w ∈W? [] = false
+  w ∈W? (x :: xs) = (w ≈? x) ∨ (w ∈W? xs)
+  infix 4 _∈W?_
+
+  deduplicate : List World → List World
+  deduplicate [] = []
+  deduplicate (w :: ws) with w ∈W? ws
+  ... | true = deduplicate ws
+  ... | false = w :: deduplicate ws
+  
   -- ==============================================================
   -- === Semantics 3.2 
   -- ==============================================================
