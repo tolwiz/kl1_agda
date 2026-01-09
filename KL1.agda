@@ -33,6 +33,10 @@ data List (A : Set) : Set where
   _::_ : A → List A → List A
 infixr 5 _::_
 
+length : {A : Set} → List A → ℕ
+length [] = zero
+length (x :: xs) = suc (length xs)
+
 _++_ : {A : Set} → List A → List A → List A
 [] ++ ys = ys
 (x :: xs) ++ ys = x :: (xs ++ ys)
@@ -165,16 +169,19 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) (universe : L
       in
         map (λ add → add ∪ w) additions
 
-    cns : List Rule → World → ℕ → List World
-    cns rules w zero = w :: [] 
-    cns rules w (suc n) =
-      let nexts = step rules w in
-      concatMap (λ nw → cns rules nw n) nexts
+    cns : List Rule → World → List World
+    cns rules w = fixpoint w (length universe)
+      where
+        fixpoint : World → ℕ → List World
+        fixpoint currentWorld zero    = currentWorld :: []
+        fixpoint currentWorld (suc n) =
+          let nextWorlds = step rules currentWorld in
+          concatMap (λ nw → fixpoint nw n) nextWorlds
   
-    out₁ : List Rule → World → ℕ → List World
-    out₁ rules initialWorld n = 
+    out₁ : List Rule → World → List World
+    out₁ rules initialWorld = 
       let
-        candidates = cns rules initialWorld n
+        candidates = cns rules initialWorld
         valid      = filter (λ w → w ⊨*? rules) candidates
       in
         deduplicate valid 
