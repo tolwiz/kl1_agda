@@ -33,6 +33,18 @@ data List (A : Set) : Set where
   _::_ : A → List A → List A
 infixr 5 _::_
 
+data _∈_ {A : Set} (x : A) : List A → Set where 
+  found : ∀ {xs} → x ∈ (x :: xs)
+  next : ∀ {y xs} → x ∈ xs → x ∈ (y :: xs)
+infix 4 _∈_
+
+data _∩_ {A : Set} (xs ys : List A) : Set where
+  common : ∀ {x} → x ∈ xs → x ∈ ys → xs ∩ ys
+infix 4 _∩_
+
+_⊆_ : {A : Set} → List A → List A → Set
+xs ⊆ ys = ∀ {x} → x ∈ xs → x ∈ ys
+
 _++_ : {A : Set} → List A → List A → List A
 [] ++ ys = ys
 (x :: xs) ++ ys = x :: (xs ++ ys)
@@ -67,6 +79,13 @@ data Dec (P : Set) : Set where
   yes : (p : P) → Dec P
   no  : (np : ¬ P) → Dec P
 
+data ⊤ : Set where
+  constructor tt
+
+⊥-elim : {A : Set} → ⊥ → A
+⊥-elim ()
+
+
 -- ================================================================
 -- === KL1
 -- ================================================================
@@ -87,29 +106,64 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   data Rule : Set where
     must : (b : Body) → (c : Head) → Rule
     may  : (b : Body) → (c : Head) → Rule
-  
-  _∈?_ : Atom → List Atom → Bool
-  a ∈? [] = false
+ 
+  _∈?_ : (a : Atom) → (list : List Atom) → Dec (a ∈ list)
+  a ∈? [] = no (λ ())
   a ∈? (x :: xs) with a ≟ x
-  ... | yes _ = true
-  ... | no  _ = a ∈? xs
+  ... | yes refl = yes found
+  ... | no neq with a ∈? xs
+  ...   | yes p = yes (next p)
+  ...   | no np = no impossible
+    where
+      impossible : a ∈ (x :: xs) → ⊥
+      impossible found    = neq refl
+      impossible (next p) = np p
 
-  _⊆?_ : List Atom → List Atom → Bool
-  [] ⊆? ys = true
-  (x :: xs) ⊆? ys = (x ∈? ys) ∧ (xs ⊆? ys)
-  infix 4 _⊆?_
+  _⊆?_ : (xs ys : List Atom) → Dec (xs ⊆ ys)
+  [] ⊆? ys = yes emptySubset
+    where
+      emptySubset : [] ⊆ ys
+      emptySubset ()
+  (x :: xs) ⊆? ys with x ∈? ys
+  ... | no np = no impossibleHead
+    where
+      impossibleHead : ¬ ((x :: xs) ⊆ ys)
+      impossibleHead sub = np (sub found)
+  ... | yes p with xs ⊆? ys
+  ...   | no nq = no impossibleTail
+    where
+      impossibleTail : ¬ ((x :: xs) ⊆ ys)
+      impossibleTail sub = nq tailSubset
+        where
+          tailSubset : xs ⊆ ys
+          tailSubset h = sub (next h)
+  ...   | yes q = yes fullSubset
+    where
+      fullSubset : (x :: xs) ⊆ ys
+      fullSubset found    = p
+      fullSubset (next h) = q h
   
-  _∩?_ : List Atom → World → Bool
-  []        ∩? w = false
-  (x :: xs) ∩? w = (x ∈? w) ∨ (xs ∩? w)
-  infix 7 _∩?_
+  _∩?_ : (xs ys : List Atom) → Dec (xs ∩ ys)
+  [] ∩? ys = no impossible
+    where
+      impossible : [] ∩ ys → ⊥
+      impossible (common () _)
+  (x :: xs) ∩? ys with x ∈? ys
+  ... | yes xInYs = yes (common found xInYs)
+  ... | no notInYs with xs ∩? ys
+  ...   | yes (common xInXs yInYs) = yes (common (next xInXs) yInYs)
+  ...   | no noRecursion = no impossible
+    where
+      impossible : (x :: xs) ∩ ys → ⊥
+      impossible (common found yInYs)       = notInYs yInYs
+      impossible (common (next xInXs) yInYs) = noRecursion (common xInXs yInYs)
 
   _∪_ : List Atom → List Atom → List Atom
   [] ∪ ys = ys
   (x :: xs) ∪ ys with x ∈? ys
-  ... | true = xs ∪ ys
-  ... | false = x :: (xs ∪ ys)
-  infixr 5 _∪_
+    ... | yes _ = xs ∪ ys
+    ... | no  _ = x :: (xs ∪ ys)
+  infix 5 _∪_
 
   _⊨?_ : World → Rule → Bool
   w ⊨? (may _ _) = true
