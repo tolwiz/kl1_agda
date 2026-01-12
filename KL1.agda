@@ -250,6 +250,9 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     universe : List Rule → World → List Atom
     universe rules w = w ++ concatMap atomsInRule rules
 
+    maxSteps : List Rule → World → ℕ
+    maxSteps rules w = length (universe rules w)
+
     cns : List Rule → World → ℕ → List World
     cns rules w zero = w :: [] 
     cns rules w (suc n) =
