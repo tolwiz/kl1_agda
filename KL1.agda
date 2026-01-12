@@ -33,6 +33,10 @@ data List (A : Set) : Set where
   _::_ : A → List A → List A
 infixr 5 _::_
 
+length : {A : Set} → List A → ℕ
+length [] = zero
+length (x :: xs) = suc (length xs)
+
 data _∈_ {A : Set} (x : A) : List A → Set where 
   found : ∀ {xs} → x ∈ (x :: xs)
   next : ∀ {y xs} → x ∈ xs → x ∈ (y :: xs)
