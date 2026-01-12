@@ -79,12 +79,15 @@ data Dec (P : Set) : Set where
   yes : (p : P) → Dec P
   no  : (np : ¬ P) → Dec P
 
-data ⊤ : Set where
+record ⊤ : Set where
   constructor tt
 
 ⊥-elim : {A : Set} → ⊥ → A
 ⊥-elim ()
 
+⌊_⌋ : {P : Set} → Dec P → Bool
+⌊ yes _ ⌋ = true
+⌊ no  _ ⌋ = false
 
 -- ================================================================
 -- === KL1
@@ -144,39 +147,55 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
       fullSubset (next h) = q h
   
   _∩?_ : (xs ys : List Atom) → Dec (xs ∩ ys)
-  [] ∩? ys = no impossible
+  [] ∩? ys = no impossibleEmpty
     where
-      impossible : [] ∩ ys → ⊥
-      impossible (common () _)
+      impossibleEmpty : [] ∩ ys → ⊥
+      impossibleEmpty (common () _)
   (x :: xs) ∩? ys with x ∈? ys
   ... | yes xInYs = yes (common found xInYs)
   ... | no notInYs with xs ∩? ys
   ...   | yes (common xInXs yInYs) = yes (common (next xInXs) yInYs)
-  ...   | no noRecursion = no impossible
+  ...   | no noRecursion = no impossibleCons
     where
-      impossible : (x :: xs) ∩ ys → ⊥
-      impossible (common found yInYs)       = notInYs yInYs
-      impossible (common (next xInXs) yInYs) = noRecursion (common xInXs yInYs)
+      impossibleCons : (x :: xs) ∩ ys → ⊥
+      impossibleCons (common found yInYs)        = notInYs yInYs
+      impossibleCons (common (next xInXs) yInYs) = noRecursion (common xInXs yInYs)
 
   _∪_ : List Atom → List Atom → List Atom
   [] ∪ ys = ys
   (x :: xs) ∪ ys with x ∈? ys
-    ... | yes _ = xs ∪ ys
-    ... | no  _ = x :: (xs ∪ ys)
+  ... | yes _ = xs ∪ ys
+  ... | no  _ = x :: (xs ∪ ys)
   infix 5 _∪_
 
-  _⊨?_ : World → Rule → Bool
-  w ⊨? (may _ _) = true
-  w ⊨? (must b c) = (b ⊆? w) ⇒ (c ∩? w)
-  infix 5 _⊨?_
+  _⊨_ : World → Rule → Set
+  w ⊨ (may _ _) = ⊤
+  w ⊨ (must b c) = (b ⊆ w) → (c ∩ w)
+  infix 5 _⊨_
 
-  _⊨*?_ : World → List Rule → Bool
-  w ⊨*? [] = true
-  w ⊨*? (r :: rs) = (w ⊨? r) ∧ (w ⊨*? rs)
+  _⊨?_ : (w : World) → (r : Rule) → Dec (w ⊨ r)
+  w ⊨? (may _ _) = yes tt
+  w ⊨? (must b c) with b ⊆? w
+  ... | no bodyMissing = yes (λ sub → ⊥-elim (bodyMissing sub))
+  ... | yes bodyPresent with c ∩? w
+  ...   | yes headPresent = yes (λ _ → headPresent)
+  ...   | no headMiss = no (λ ruleProof → headMiss (ruleProof bodyPresent))
+
+  data AllValid (w : World) : List Rule → Set where
+    validEmpty : AllValid w []
+    validCons  : ∀ {r rs} → (w ⊨ r) → AllValid w rs → AllValid w (r :: rs)
+
+  _⊨*?_ : (w : World) → (rs : List Rule) → Dec (AllValid w rs)
+  w ⊨*? [] = yes validEmpty
+  w ⊨*? (r :: rs) with w ⊨? r
+  ... | no headIsInvalid = no (λ { (validCons proofOfHead _) → headIsInvalid proofOfHead })
+  ... | yes headIsValid with w ⊨*? rs
+  ...   | no tailIsInvalid = no (λ { (validCons _ proofOfTail) → tailIsInvalid proofOfTail })
+  ...   | yes tailIsValid  = yes (validCons headIsValid tailIsValid)
   infix 5 _⊨*?_
 
   _≈?_ : World → World → Bool
-  w1 ≈? w2 = (w1 ⊆? w2) ∧ (w2 ⊆? w1)
+  w1 ≈? w2 = ⌊ w1 ⊆? w2 ⌋ ∧ ⌊ w2 ⊆? w1 ⌋
   infix 4 _≈?_
 
   _∈W?_ : World → List World → Bool
@@ -200,11 +219,12 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     bodyOf (may b c)  = b
     
     ruleOptions : Rule → World → List (List Atom)
-    ruleOptions r w with (bodyOf r) ⊆? w | r
-    ... | false | _ = [] :: [] 
-    ... | true  | must _ heads = map (λ h → h :: []) heads
-    ... | true  | may  _ heads = [] :: (map (λ h → h :: []) heads)
-  
+    ruleOptions r w with (bodyOf r) ⊆? w
+    ... | no _ = [] :: []
+    ... | yes _ with r
+    ...   | must _ heads = map (λ h → h :: []) heads
+    ...   | may  _ heads = [] :: (map (λ h → h :: []) heads)
+
     cartesian : {A : Set} → List (List (List A)) → List (List A)
     cartesian [] = [] :: []
     cartesian (options :: rest) =
@@ -224,12 +244,14 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     cns rules w (suc n) =
       let nexts = step rules w in
       concatMap (λ nw → cns rules nw n) nexts
-  
+ 
+    -- TODO: out₁ should not discard the proofs. Instead it should
+    -- return a list of tuples [World;proof]
     out₁ : List Rule → World → ℕ → List World
     out₁ rules initialWorld n = 
       let
         candidates = cns rules initialWorld n
-        valid      = filter (λ w → w ⊨*? rules) candidates
+        valid      = filter (λ w → ⌊ w ⊨*? rules ⌋) candidates
       in
         deduplicate valid 
 
