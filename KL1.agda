@@ -247,6 +247,9 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     atomsInRule (may b h)  = b ++ h
     atomsInRule (must b h) = b ++ h
 
+    universe : List Rule → World → List Atom
+    universe rules w = w ++ concatMap atomsInRule rules
+
     cns : List Rule → World → ℕ → List World
     cns rules w zero = w :: [] 
     cns rules w (suc n) =
