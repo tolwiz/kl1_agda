@@ -239,6 +239,10 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
       in
         map (λ add → add ∪ w) additions
 
+    atomsInRule : Rule → List Atom
+    atomsInRule (may b h)  = b ++ h
+    atomsInRule (must b h) = b ++ h
+
     cns : List Rule → World → ℕ → List World
     cns rules w zero = w :: [] 
     cns rules w (suc n) =
