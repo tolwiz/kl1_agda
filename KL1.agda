@@ -1,8 +1,5 @@
 module KL1 where
 
--- ==================================================================
--- === General definitions and helper functions 
--- ==================================================================
 data ℕ : Set where
   zero : ℕ
   suc  : ℕ → ℕ
@@ -93,14 +90,8 @@ record ⊤ : Set where
 ⌊ yes _ ⌋ = true
 ⌊ no  _ ⌋ = false
 
--- ================================================================
--- === KL1
--- ================================================================
 module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
  
-  -- ==============================================================
-  -- === Common
-  -- ==============================================================
   Body : Set
   Body = List Atom
 
@@ -213,9 +204,6 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
   ... | true = deduplicate ws
   ... | false = w :: deduplicate ws
   
-  -- ==============================================================
-  -- === Semantics 3.2 
-  -- ==============================================================
   module Semantics1 where
 
     bodyOf : Rule → Body
@@ -253,23 +241,23 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
     maxSteps : List Rule → World → ℕ
     maxSteps rules w = length (universe rules w)
 
-    cns : List Rule → World → ℕ → List World
-    cns rules w zero = w :: [] 
-    cns rules w (suc n) =
-      let nexts = step rules w in
-      concatMap (λ nw → cns rules nw n) nexts
- 
+    cns : List Rule → World → List World
+    cns rules initialWorld = fixedPoint initialWorld (maxSteps rules initialWorld)
+      where
+        fixedPoint : World → ℕ → List World
+        fixedPoint w zero = w :: []
+        fixedPoint w (suc n) =
+          let
+            nexts = step rules w
+          in
+            concatMap (λ nw → fixedPoint nw n) nexts
+
     -- TODO: out₁ should not discard the proofs. Instead it should
     -- return a list of tuples [World;proof]
     out₁ : List Rule → World → ℕ → List World
     out₁ rules initialWorld n = 
       let
-        candidates = cns rules initialWorld n
+        candidates = cns rules initialWorld
         valid      = filter (λ w → ⌊ w ⊨*? rules ⌋) candidates
       in
         deduplicate valid 
-
-  -- ===============================================================
-  -- === Semantics 3.3
-  -- ===============================================================
-  module Semantics2 where
