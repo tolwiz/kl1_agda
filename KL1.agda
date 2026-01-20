@@ -59,15 +59,6 @@ map : {A B : Set} → (A → B) → List A → List B
 map f [] = []
 map f (x :: xs) = f x :: map f xs
 
-
-{- Boolean filter, to delete
-filter : {A : Set} →  (A → Bool) → List A → List A
-filter p [] = []
-filter p (x :: xs) with p x
-... | true  = x :: filter p xs
-... | false = filter p xs
--}
-
 concat : {A : Set} → List (List A) → List A
 concat [] = []
 concat (x :: xs) = x ++ concat xs
