@@ -34,6 +34,11 @@ length : {A : Set} → List A → ℕ
 length [] = zero
 length (x :: xs) = suc (length xs)
 
+data Σ (A : Set) (B : A → Set) : Set where
+  _,_ : (x : A) → (y : B x) → Σ A B
+
+infixr 4 _,_
+
 data _∈_ {A : Set} (x : A) : List A → Set where 
   found : ∀ {xs} → x ∈ (x :: xs)
   next : ∀ {y xs} → x ∈ xs → x ∈ (y :: xs)
@@ -54,11 +59,14 @@ map : {A B : Set} → (A → B) → List A → List B
 map f [] = []
 map f (x :: xs) = f x :: map f xs
 
+
+{- Boolean filter, to delete
 filter : {A : Set} →  (A → Bool) → List A → List A
 filter p [] = []
 filter p (x :: xs) with p x
 ... | true  = x :: filter p xs
 ... | false = filter p xs
+-}
 
 concat : {A : Set} → List (List A) → List A
 concat [] = []
@@ -251,13 +259,17 @@ module Logic (Atom : Set) (_≟_ : (x y : Atom) → Dec (x ≡ y)) where
             nexts = step rules w
           in
             concatMap (λ nw → fixedPoint nw n) nexts
-
-    -- TODO: out₁ should not discard the proofs. Instead it should
-    -- return a list of tuples [World;proof]
-    out₁ : List Rule → World → ℕ → List World
-    out₁ rules initialWorld n = 
+     
+    filter : (rs : List Rule) → List World → List (Σ World (λ w → AllValid w rs))
+    filter rs [] = []
+    filter rs (w :: ws) with w ⊨*? rs
+    ... | no _ = filter rs ws
+    ... | yes p = (w , p) :: filter rs ws
+    
+    out₁ : (rules : List Rule) → World → List (Σ World (λ w → AllValid w rules)) 
+    out₁ rules initialWorld = 
       let
         candidates = cns rules initialWorld
-        valid      = filter (λ w → ⌊ w ⊨*? rules ⌋) candidates
+        uniqueCandidates = deduplicate candidates
       in
-        deduplicate valid 
+        filter rules uniqueCandidates
