@@ -1,4 +1,4 @@
-![KL1 Logic](./1 (1).jpg)
+![KL1 Logic](./1.jpg)
 
 # KL1 in C
 
